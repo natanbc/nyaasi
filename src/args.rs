@@ -1,18 +1,25 @@
 use clap::{App, Arg, ArgMatches};
 
+lazy_static! {
+    static ref ARGS: ArgMatches<'static> = parse_args();
+}
+
+pub fn output_json() -> bool {
+    ARGS.is_present("json")
+}
+
 pub fn get_url() -> Result<String, String> {
-    let args = parse_args();
     Ok(format!("https://nyaa.si/?f={}&c={}_{}&p={}&q={}",
-                      try_u64(&args, "filter", 2)?,
-                      try_u64(&args, "category", 1)?,
-                      try_u64(&args, "subcategory", 2)?,
-                      try_u64(&args, "page", 1)?,
-                      args.value_of("query").unwrap_or("")
+                      try_u64("filter", 2)?,
+                      try_u64("category", 1)?,
+                      try_u64("subcategory", 2)?,
+                      try_u64("page", 1)?,
+                      ARGS.value_of("query").unwrap_or("")
     ))
 }
 
-fn try_u64<'a>(args: &ArgMatches<'a>, s: &str, default: u64) -> Result<u64, String> {
-    match args.value_of(s) {
+fn try_u64<'a>(s: &str, default: u64) -> Result<u64, String> {
+    match ARGS.value_of(s) {
         None => Ok(default),
         Some(v) => v.parse::<u64>().map_err(|e| format!("Invalid value for {}: {}", s, e))
     }
@@ -23,6 +30,10 @@ fn parse_args() -> ArgMatches<'static> {
         .version("0.1")
         .author("natanbc <natanbc@usp.br>")
         .about("Scrapes nyaa.si")
+        .arg(Arg::with_name("json")
+            .short("j")
+            .long("json")
+            .help("Output data as json instead"))
         .arg(Arg::with_name("filter")
             .short("f")
             .long("filter")

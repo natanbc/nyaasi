@@ -1,14 +1,16 @@
 use kuchiki::traits::*;
 use kuchiki::{ElementData, NodeRef, NodeDataRef};
+use serde_derive::Serialize;
+
 use super::magnet_uri;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Links {
     pub torrent: String,
     pub magnet: String
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct AnimeEntry {
     pub name: String,
     pub links: Links,
@@ -20,19 +22,19 @@ pub struct AnimeEntry {
     pub downloads: u32
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Page {
     pub url: String,
     pub number: u32
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Pagination {
     pub pages: Vec<Page>,
     pub current: Page
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Results {
     pub entries: Vec<AnimeEntry>,
     pub pagination: Pagination
@@ -115,17 +117,17 @@ fn select_u32(node: &NodeRef, sel: &str) -> Option<u32> {
 
 #[inline]
 fn select_parent_href(a: &NodeRef, sel: &str) -> Option<String> {
-    href(&select_parent(a, sel)?).map(|url| {
+    href(&select_parent(a, sel)?)
+}
+
+#[inline]
+fn href(a: &NodeRef) -> Option<String> {
+    a.as_element()?.attributes.borrow().get("href").map(|e| e.to_owned()).map(|url| {
         if url.starts_with("/") {
             format!("https://nyaa.si{}", url)
         } else {
             url
         }
     })
-}
-
-#[inline]
-fn href(a: &NodeRef) -> Option<String> {
-    a.as_element()?.attributes.borrow().get("href").map(|e| e.to_owned())
 }
 
