@@ -37,7 +37,7 @@ pub struct Pagination {
 #[derive(Debug, Serialize)]
 pub struct Results {
     pub entries: Vec<AnimeEntry>,
-    pub pagination: Pagination
+    pub pagination: Option<Pagination>
 }
 
 pub fn parse(html: &str, current_url: &str) -> Option<Results> {
@@ -72,25 +72,24 @@ pub fn parse(html: &str, current_url: &str) -> Option<Results> {
         })
     }).collect::<Option<Vec<_>>>()?;
 
-    let pages = dom.select("ul.pagination > li:not(.disabled) > a:not([rel])").ok()?
-        .map(|e| {
-            make_page(&e, current_url)
-        }).collect::<Option<Vec<_>>>()?;
-
-    let current = make_page(
-        &dom.select_first("ul.pagination > li.active > a").ok()?,
-        current_url
-    )?;
+    let pagination = dom.select_first("ul.pagination > li.active > a").ok()
+        .and_then(|e| make_page(&e, current_url))
+        .and_then(|current| {
+            Some(Pagination {
+                pages: dom.select("ul.pagination > li:not(.disabled) > a:not([rel])").ok()?
+                    .map(|e| {
+                        make_page(&e, current_url)
+                    }).collect::<Option<Vec<_>>>()?,
+                current: current
+            })
+        });
 
     //give newest last
     entries.reverse();
 
     Some(Results {
         entries: entries,
-        pagination: Pagination {
-            pages: pages,
-            current: current
-        }
+        pagination: pagination
     })
 }
 

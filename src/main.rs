@@ -32,13 +32,15 @@ fn main() {
             println!("\tLeechers:   {}", row.leechers);
             println!("\tDownloads:  {}", row.downloads);
         }
-        print!("Pages: ");
-        for page in data.pagination.pages {
-            print!("{} ", page.number);
-            if data.pagination.current.number == page.number {
-                print!("(current) ");
+        if let Some(p) = data.pagination {
+            print!("Pages: ");
+            for page in p.pages {
+                print!("{} ", page.number);
+                if p.current.number == page.number {
+                    print!("(current) ");
+                }
             }
+            print!("\n");
         }
-        print!("\n");
     }
 }
