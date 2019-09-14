@@ -40,7 +40,7 @@ pub struct Results {
     pub pagination: Pagination
 }
 
-pub fn parse(html: &str) -> Option<Results> {
+pub fn parse(html: &str, current_url: &str) -> Option<Results> {
     let dom = kuchiki::parse_html().one(html);
 
     let table = dom.select_first("tr.success > td.text-center > a > i.fa-magnet")
@@ -51,16 +51,16 @@ pub fn parse(html: &str) -> Option<Results> {
                                .and_then(|e| e.parent())
         )?;
 
-    let entries = table.select("tr.success").ok()?.map(|row| {
+    let mut entries = table.select("tr.success").ok()?.map(|row| {
         use std::str::FromStr;
 
-        let magnet_uri = select_parent_href(row.as_node(), "td.text-center:nth-child(3) > a > i.fa-magnet")?;
+        let magnet_uri = select_parent_href(row.as_node(), "td.text-center:nth-child(3) > a > i.fa-magnet", current_url)?;
         let magnet = magnet_uri::MagnetURI::from_str(&magnet_uri).ok();
 
         Some(AnimeEntry {
             name: select_text(row.as_node(), "td:nth-child(2) > a:not(.comments)")?,
             links: Links {
-                torrent: select_parent_href(row.as_node(), "td.text-center:nth-child(3) > a > i.fa-download")?,
+                torrent: select_parent_href(row.as_node(), "td.text-center:nth-child(3) > a > i.fa-download", current_url)?,
                 magnet: magnet_uri
             },
             size: select_text(row.as_node(), "td.text-center:nth-child(4)")?,
@@ -74,13 +74,16 @@ pub fn parse(html: &str) -> Option<Results> {
 
     let pages = dom.select("ul.pagination > li:not(.disabled) > a:not([rel])").ok()?
         .map(|e| {
-            make_page(&e)
+            make_page(&e, current_url)
         }).collect::<Option<Vec<_>>>()?;
 
     let current = make_page(
-        &dom.select_first("ul.pagination > li.active > a").ok()?
+        &dom.select_first("ul.pagination > li.active > a").ok()?,
+        current_url
     )?;
 
+    //give newest last
+    entries.reverse();
 
     Some(Results {
         entries: entries,
@@ -92,9 +95,9 @@ pub fn parse(html: &str) -> Option<Results> {
 }
 
 #[inline]
-fn make_page(e: &NodeDataRef<ElementData>) -> Option<Page> {
+fn make_page(e: &NodeDataRef<ElementData>, current_url: &str) -> Option<Page> {
     Some(Page {
-        url: href(e.as_node())?,
+        url: href(e.as_node(), current_url)?,
         number: e.text_contents().split_whitespace().next()
             .and_then(|n| n.parse::<u32>().ok())?
     })
@@ -116,17 +119,19 @@ fn select_u32(node: &NodeRef, sel: &str) -> Option<u32> {
 }
 
 #[inline]
-fn select_parent_href(a: &NodeRef, sel: &str) -> Option<String> {
-    href(&select_parent(a, sel)?)
+fn select_parent_href(a: &NodeRef, sel: &str, current_url: &str) -> Option<String> {
+    href(&select_parent(a, sel)?, current_url)
 }
 
 #[inline]
-fn href(a: &NodeRef) -> Option<String> {
+fn href(a: &NodeRef, current_url: &str) -> Option<String> {
     a.as_element()?.attributes.borrow().get("href").map(|e| e.to_owned()).map(|url| {
-        if url.starts_with("/") {
+        if url.starts_with("//") {
+            format!("https:{}", url)
+        } else if url.starts_with("/") {
             format!("https://nyaa.si{}", url)
         } else {
-            url
+            format!("{}{}", current_url, url)
         }
     })
 }

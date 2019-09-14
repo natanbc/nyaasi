@@ -15,14 +15,14 @@ fn main() {
     };
     let raw = reqwest::get(&url).and_then(|mut r| r.text()).expect("oof");
 
-    let data = parser::parse(&raw).expect("Failed to parse");
+    let data = parser::parse(&raw, &url).expect("Failed to parse");
 
     if args::output_json() {
         let serialized = serde_json::to_string(&data)
             .expect("Failed to serialize results");
         println!("{}", serialized);
     } else {
-        for row in data.entries.iter().rev() {
+        for row in data.entries.iter() {
             println!("{}", row.name);
             println!("\tTorrent:    {}", row.links.torrent);
             println!("\tMagnet:     {}", row.links.magnet);
