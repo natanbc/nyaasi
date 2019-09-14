@@ -40,6 +40,15 @@ pub struct Results {
     pub pagination: Option<Pagination>
 }
 
+impl Results {
+    pub fn empty() -> Results {
+        Results {
+            entries: Vec::new(),
+            pagination: None
+        }
+    }
+}
+
 pub fn parse(html: &str, current_url: &str) -> Option<Results> {
     let dom = kuchiki::parse_html().one(html);
 
