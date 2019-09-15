@@ -36,24 +36,47 @@ fn main() {
         println!("{}", serialized);
     } else {
         for row in data.entries.iter() {
-            println!("{}", row.name);
-            println!("\tTorrent:    {}", row.links.torrent);
-            println!("\tMagnet:     {}", row.links.magnet);
-            println!("\tSize:       {} (parsed: {:?})", row.size, row.parsed_size);
-            println!("\tDate added: {}", row.date);
-            println!("\tSeeders:    {}", row.seeders);
-            println!("\tLeechers:   {}", row.leechers);
-            println!("\tDownloads:  {}", row.downloads);
-        }
-        if let Some(p) = data.pagination {
-            print!("Pages: ");
-            for page in p.pages {
-                print!("{} ", page.number);
-                if p.current.number == page.number {
-                    print!("(current) ");
+            if args::should_print("name") {
+                println!("{}", row.name);
+            }
+            if args::should_print("torrent") {
+                println!("\tTorrent:    {}", row.links.torrent);
+            }
+            if args::should_print("magnet") {
+                println!("\tMagnet:     {}", row.links.magnet);
+            }
+            if args::should_print("size") {
+                print!("\tSize:       {}", row.size);
+                if args::should_print("parsed_size") {
+                    println!(" (parsed: {:?})", row.parsed_size);
+                } else {
+                    println!("");
                 }
             }
-            print!("\n");
+            if args::should_print("date") {
+                println!("\tDate added: {}", row.date);
+            }
+            if args::should_print("seeders") {
+                println!("\tSeeders:    {}", row.seeders);
+            }
+            if args::should_print("leechers") {
+                println!("\tLeechers:   {}", row.leechers);
+            }
+            if args::should_print("downloads") {
+                println!("\tDownloads:  {}", row.downloads);
+            }
+        }
+        if args::should_print("pages") {
+            if let Some(p) = data.pagination {
+                print!("Pages: ");
+                for page in p.pages {
+                    print!("{} ", page.number);
+                    if p.current.number == page.number && args::should_print("current_page") {
+                        print!("(current) ");
+                    }
+                }
+                print!("\n");
+            }
         }
     }
 }

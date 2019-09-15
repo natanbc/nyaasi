@@ -9,6 +9,13 @@ pub fn output_json() -> bool {
     ARGS.is_present("json")
 }
 
+pub fn should_print(what: &str) -> bool {
+    match ARGS.values_of("include") {
+        None => true,
+        Some(mut v) => v.any(|v| v == what),
+    }
+}
+
 pub fn get_url() -> Result<String, String> {
     Url::parse_with_params(
         "https://nyaa.si",
@@ -45,6 +52,13 @@ fn parse_args() -> ArgMatches<'static> {
         .version("0.1")
         .author("natanbc <natanbc@usp.br>")
         .about("Scrapes nyaa.si")
+        .arg(Arg::with_name("include")
+            .short("i")
+            .long("include")
+            .value_name("FIELD")
+            .help("Includes a field when printing to stdout. Ignored if --json is present. Valid values are name, torrent, magnet, size, parsed_size, date, seeders, leechers, downloads, pages, current_page. Ignores parsed_size if size is not present. Ignores current_page if pages is not set")
+            .takes_value(true)
+            .multiple(true))
         .arg(Arg::with_name("json")
             .short("j")
             .long("json")
