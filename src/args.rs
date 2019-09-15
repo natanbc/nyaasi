@@ -10,24 +10,33 @@ pub fn output_json() -> bool {
 }
 
 pub fn get_url() -> Result<String, String> {
-    Url::parse_with_params("https://nyaa.si", &[
-        ("f", try_u64("filter", "2")?),
-        ("c", format!(
-                "{}_{}",
-                try_u64("category", "1")?,
-                try_u64("subcategory", "2")?
-        )),
-        ("p", try_u64("page", "1")?),
-        ("q", ARGS.value_of("query").unwrap_or("").to_owned())
-    ]).map(|u| u.into_string()).map_err(|e| e.to_string())
+    Url::parse_with_params(
+        "https://nyaa.si",
+        &[
+            ("f", try_u64("filter", "2")?),
+            (
+                "c",
+                format!(
+                    "{}_{}",
+                    try_u64("category", "1")?,
+                    try_u64("subcategory", "2")?
+                ),
+            ),
+            ("p", try_u64("page", "1")?),
+            ("q", ARGS.value_of("query").unwrap_or("").to_owned()),
+        ],
+    )
+    .map(|u| u.into_string())
+    .map_err(|e| e.to_string())
 }
 
 fn try_u64(name: &str, default: &str) -> Result<String, String> {
     match ARGS.value_of(name) {
         None => Ok(default.to_owned()),
-        Some(v) => v.parse::<u64>()
+        Some(v) => v
+            .parse::<u64>()
             .map_err(|e| format!("Invalid value for {}: {}", name, e))
-            .map(|_| v.to_owned())
+            .map(|_| v.to_owned()),
     }
 }
 

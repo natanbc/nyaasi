@@ -20,9 +20,8 @@ fn main() {
     let data = match parser::parse(&raw, &url) {
         None => {
             if args::output_json() {
-                let serialized = serde_json::to_string(
-                    &parser::Results::empty()
-                ).expect("Failed to serialize results");
+                let serialized = serde_json::to_string(&parser::Results::empty())
+                    .expect("Failed to serialize results");
                 println!("{}", serialized);
             } else {
                 eprintln!("Nothing found");
