@@ -6,6 +6,13 @@ pub mod magnet_uri;
 pub mod parser;
 
 fn main() {
+    let limit = match args::include_amount() {
+        Ok(l) => l,
+        Err(e) => {
+            eprintln!("{}", e);
+            return;
+        }
+    };
     let url = match args::get_url() {
         Ok(u) => u,
         Err(e) => {
@@ -17,7 +24,7 @@ fn main() {
         .and_then(|mut r| r.text())
         .expect("Failed to fetch data from nyaa.si");
 
-    let data = match parser::parse(&raw, &url) {
+    let mut data = match parser::parse(&raw, &url) {
         None => {
             if args::output_json() {
                 let serialized = serde_json::to_string(&parser::Results::empty())
@@ -30,6 +37,8 @@ fn main() {
         }
         Some(x) => x,
     };
+
+    data.entries.truncate(limit);
 
     if args::output_json() {
         let serialized = serde_json::to_string(&data).expect("Failed to serialize results");

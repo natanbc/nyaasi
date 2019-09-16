@@ -5,6 +5,13 @@ lazy_static! {
     static ref ARGS: ArgMatches<'static> = parse_args();
 }
 
+pub fn include_amount() -> Result<usize, String> {
+    try_u64("number", "10000000").and_then(|a| {
+        a.parse::<usize>()
+            .map_err(|_| format!("{} is not a valid amount", a))
+    })
+}
+
 pub fn output_json() -> bool {
     ARGS.is_present("json")
 }
@@ -59,6 +66,12 @@ fn parse_args() -> ArgMatches<'static> {
             .help("Includes a field when printing to stdout. Ignored if --json is present. Valid values are name, torrent, magnet, size, parsed_size, date, seeders, leechers, downloads, pages, current_page. Ignores parsed_size if size is not present. Ignores current_page if pages is not set")
             .takes_value(true)
             .multiple(true))
+        .arg(Arg::with_name("number")
+            .short("n")
+            .long("number")
+            .value_name("AMOUNT")
+            .help("Number of elements to include. Only the <AMOUNT> most recent ones will be included")
+            .takes_value(true))
         .arg(Arg::with_name("json")
             .short("j")
             .long("json")
