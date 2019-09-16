@@ -3,65 +3,48 @@ use url::Url;
 
 lazy_static! {
     static ref ARGS: ArgMatches<'static> = parse_args();
-
-    static ref FILTERS: Vec<&'static str> = vec![
-        "No filter",
-        "No remakes",
-        "Trusted only",
-    ];
-
+    static ref FILTERS: Vec<&'static str> = vec!["No filter", "No remakes", "Trusted only",];
     static ref NYAASI_CATEGORIES: Vec<Category> = vec![
         Category::from("All categories", vec![]),
-        Category::from("Anime", vec![
-            "Anime Music Video",
-            "English-translated",
-            "Non-English-translated",
-            "Raw"
-        ]),
-        Category::from("Audio", vec![
-            "Lossless",
-            "Lossy"
-        ]),
-        Category::from("Literature", vec![
-            "English-translated",
-            "Non-English-translated",
-            "Raw"
-        ]),
-        Category::from("Live Action", vec![
-            "English-translated",
-            "Idol/Promotional Video",
-            "Non-English-translated",
-            "Raw"
-        ]),
-        Category::from("Pictures", vec![
-            "Graphics",
-            "Photos"
-        ]),
-        Category::from("Software", vec![
-            "Applications",
-            "Games"
-        ]),
+        Category::from(
+            "Anime",
+            vec![
+                "Anime Music Video",
+                "English-translated",
+                "Non-English-translated",
+                "Raw"
+            ]
+        ),
+        Category::from("Audio", vec!["Lossless", "Lossy"]),
+        Category::from(
+            "Literature",
+            vec!["English-translated", "Non-English-translated", "Raw"]
+        ),
+        Category::from(
+            "Live Action",
+            vec![
+                "English-translated",
+                "Idol/Promotional Video",
+                "Non-English-translated",
+                "Raw"
+            ]
+        ),
+        Category::from("Pictures", vec!["Graphics", "Photos"]),
+        Category::from("Software", vec!["Applications", "Games"]),
     ];
-
     static ref SUKEBEI_CATEGORIES: Vec<Category> = vec![
         Category::from("All categories", vec![]),
-        Category::from("Art", vec![
-            "Anime",
-            "Doujinshi",
-            "Games",
-            "Manga",
-            "Pictures"
-        ]),
-        Category::from("Real Life", vec![
-            "Photobooks and Pictures",
-            "Videos"
-        ]),
+        Category::from(
+            "Art",
+            vec!["Anime", "Doujinshi", "Games", "Manga", "Pictures"]
+        ),
+        Category::from("Real Life", vec!["Photobooks and Pictures", "Videos"]),
     ];
 }
 
 enum Source {
     NYAASI,
-    SUKEBEI
+    SUKEBEI,
 }
 
 impl Source {
@@ -86,9 +69,9 @@ impl Source {
 
         if category_idx >= categories.len() {
             return Err(format!(
-                    "Category out of bounds: {} available, got {}",
-                    categories.len(),
-                    category_idx
+                "Category out of bounds: {} available, got {}",
+                categories.len(),
+                category_idx
             ));
         }
 
@@ -97,15 +80,15 @@ impl Source {
         if subcategories.len() == 0 {
             if subcategory_idx != 0 {
                 return Err(format!(
-                        "Subcategory must be 0 for categories without subcategories, got {}",
-                        subcategory_idx
+                    "Subcategory must be 0 for categories without subcategories, got {}",
+                    subcategory_idx
                 ));
             }
         } else if subcategory_idx >= subcategories.len() {
             return Err(format!(
-                    "Subcategory out of bounds: {} available, for {}",
-                    subcategories.len(),
-                    subcategory_idx
+                "Subcategory out of bounds: {} available, for {}",
+                subcategories.len(),
+                subcategory_idx
             ));
         }
 
@@ -127,8 +110,7 @@ impl Category {
     }
 
     fn names(list: &Vec<Category>) -> String {
-        list
-            .iter()
+        list.iter()
             .enumerate()
             .map(|(index, category)| format!("{} - {}", index, category.name))
             .collect::<Vec<String>>()
@@ -136,19 +118,23 @@ impl Category {
     }
 
     fn names_and_subcategories(list: &Vec<Category>) -> String {
-        list
-            .iter()
+        list.iter()
             .enumerate()
             .map(|(index, category)| {
                 if category.subcategories.len() == 0 {
                     format!("{} - {}", index, category.name)
                 } else {
-                    format!("{} - {}\n{}", index, category.name, category.subcategories
-                        .iter()
-                        .enumerate()
-                        .map(|(i, s)| format!("   {} - {}", i + 1, s))
-                        .collect::<Vec<String>>()
-                        .join("\n")
+                    format!(
+                        "{} - {}\n{}",
+                        index,
+                        category.name,
+                        category
+                            .subcategories
+                            .iter()
+                            .enumerate()
+                            .map(|(i, s)| format!("   {} - {}", i + 1, s))
+                            .collect::<Vec<String>>()
+                            .join("\n")
                     )
                 }
             })
@@ -184,9 +170,9 @@ pub fn get_url() -> Result<String, String> {
 
     if filter >= FILTERS.len() {
         return Err(format!(
-                "Filter out of bounds: {} available, got {}",
-                FILTERS.len(),
-                filter
+            "Filter out of bounds: {} available, got {}",
+            FILTERS.len(),
+            filter
         ));
     }
 
@@ -204,7 +190,10 @@ pub fn get_url() -> Result<String, String> {
 }
 
 fn try_parse<T>(name: &str, default: T) -> Result<T, String>
-    where T: std::str::FromStr, <T as std::str::FromStr>::Err: std::fmt::Display {
+where
+    T: std::str::FromStr,
+    <T as std::str::FromStr>::Err: std::fmt::Display,
+{
     match ARGS.value_of(name) {
         None => Ok(default),
         Some(v) => v
@@ -275,7 +264,7 @@ fn parse_args() -> ArgMatches<'static> {
             .short("i")
             .long("include")
             .value_name("FIELD")
-            .help("Includes a field when printing to stdout. Ignored if --json is present.\nValid values are name, torrent, magnet, size, parsed_size, date, seeders, leechers, downloads, pages, current_page.\nIgnores parsed_size if size is not present.\nIgnores current_page if pages is not set")
+            .help("Includes a field when printing to stdout. Ignored if --json is present.\nValid values are name, torrent, magnet, size, magnet_size, parsed_size, date, seeders, leechers, downloads, pages, current_page.\nIgnores parsed_size and magnet_size if size is not present.\nIgnores current_page if pages is not set")
             .takes_value(true)
             .multiple(true))
         .arg(Arg::with_name("number")

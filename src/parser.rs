@@ -3,7 +3,7 @@ use kuchiki::{ElementData, NodeDataRef, NodeRef};
 use serde_derive::Serialize;
 use url::Url;
 
-use super::magnet_uri;
+use super::{magnet_uri, size_parser};
 
 #[derive(Debug, Serialize)]
 pub struct Links {
@@ -12,11 +12,17 @@ pub struct Links {
 }
 
 #[derive(Debug, Serialize)]
+pub struct Sizes {
+    pub raw: String,
+    pub parsed_from_magnet: Option<u64>,
+    pub parsed_from_raw: Option<u64>,
+}
+
+#[derive(Debug, Serialize)]
 pub struct AnimeEntry {
     pub name: String,
     pub links: Links,
-    pub size: String,
-    pub parsed_size: Option<u64>,
+    pub sizes: Sizes,
     pub date: String,
     pub seeders: u32,
     pub leechers: u32,
@@ -78,6 +84,7 @@ pub fn parse(html: &str, url: &str) -> Option<Results> {
                 &current_url,
             )?;
             let magnet = magnet_uri::MagnetURI::from_str(&magnet_uri).ok();
+            let raw_size = select_text(row.as_node(), "td.text-center:nth-child(4)")?;
 
             Some(AnimeEntry {
                 name: select_text(row.as_node(), "td:nth-child(2) > a:not(.comments)")?,
@@ -89,8 +96,11 @@ pub fn parse(html: &str, url: &str) -> Option<Results> {
                     )?,
                     magnet: magnet_uri,
                 },
-                size: select_text(row.as_node(), "td.text-center:nth-child(4)")?,
-                parsed_size: magnet.and_then(|m| m.length()),
+                sizes: Sizes {
+                    raw: raw_size.clone(),
+                    parsed_from_magnet: magnet.and_then(|m| m.length()),
+                    parsed_from_raw: size_parser::parse(&raw_size).ok(),
+                },
                 date: select_text(row.as_node(), "td.text-center:nth-child(5)")?,
                 seeders: select_u32(row.as_node(), "td.text-center:nth-child(6)")?,
                 leechers: select_u32(row.as_node(), "td.text-center:nth-child(7)")?,

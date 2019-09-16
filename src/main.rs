@@ -4,6 +4,7 @@ extern crate lazy_static;
 mod args;
 pub mod magnet_uri;
 pub mod parser;
+mod size_parser;
 
 fn main() {
     let limit = match args::include_amount() {
@@ -55,12 +56,27 @@ fn main() {
                 println!("\tMagnet:     {}", row.links.magnet);
             }
             if args::should_print("size") {
-                print!("\tSize:       {}", row.size);
-                if args::should_print("parsed_size") {
-                    println!(" (parsed: {:?})", row.parsed_size);
-                } else {
-                    println!("");
+                print!("\tSize:       {}", row.sizes.raw);
+                let mut parsed: Vec<(&str, Option<u64>)> = Vec::new();
+                if args::should_print("magnet_size") {
+                    parsed.push(("magnet", row.sizes.parsed_from_magnet));
                 }
+                if args::should_print("parsed_size") {
+                    parsed.push(("parsed", row.sizes.parsed_from_raw));
+                }
+                if parsed.len() > 0 {
+                    print!(" (");
+                    let mut comma = false;
+                    for (name, v) in parsed.iter() {
+                        if comma {
+                            print!(", ");
+                        }
+                        comma = true;
+                        print!("{}: {:?}", name, v);
+                    }
+                    print!(")");
+                }
+                println!("");
             }
             if args::should_print("date") {
                 println!("\tDate added: {}", row.date);
