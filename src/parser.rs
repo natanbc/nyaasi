@@ -19,7 +19,7 @@ pub struct Sizes {
 }
 
 #[derive(Debug, Serialize)]
-pub struct AnimeEntry {
+pub struct NyaasiEntry {
     pub name: String,
     pub links: Links,
     pub sizes: Sizes,
@@ -43,7 +43,7 @@ pub struct Pagination {
 
 #[derive(Debug, Serialize)]
 pub struct Results {
-    pub entries: Vec<AnimeEntry>,
+    pub entries: Vec<NyaasiEntry>,
     pub pagination: Option<Pagination>,
 }
 
@@ -56,7 +56,7 @@ impl Results {
     }
 }
 
-pub fn parse(html: &str, url: &str) -> Option<Results> {
+pub fn parse_html(html: &str, url: &str) -> Option<Results> {
     let current_url = Url::parse(url).ok()?;
     let dom = kuchiki::parse_html().one(html);
 
@@ -86,7 +86,7 @@ pub fn parse(html: &str, url: &str) -> Option<Results> {
             let magnet = magnet_uri::MagnetURI::from_str(&magnet_uri).ok();
             let raw_size = select_text(row.as_node(), "td.text-center:nth-child(4)")?;
 
-            Some(AnimeEntry {
+            Some(NyaasiEntry {
                 name: select_text(row.as_node(), "td:nth-child(2) > a:not(.comments)")?,
                 links: Links {
                     torrent: select_parent_href(

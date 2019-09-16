@@ -25,7 +25,7 @@ fn main() {
         .and_then(|mut r| r.text())
         .expect("Failed to fetch data from nyaa.si");
 
-    let mut data = match parser::parse(&raw, &url) {
+    let mut data = match parser::parse_html(&raw, &url) {
         None => {
             if args::output_json() {
                 let serialized = serde_json::to_string(&parser::Results::empty())
