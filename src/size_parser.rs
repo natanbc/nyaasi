@@ -3,7 +3,7 @@ lazy_static! {
 }
 
 /// Parses a size string such as "1.5 KiB" to a number in bytes.
-/// 
+///
 /// Supported suffixes are B, KiB, MiB, GiB, TiB, PiB, EiB
 ///
 /// # Examples
@@ -39,7 +39,6 @@ pub fn parse(size: &str) -> Result<u64, String> {
     Ok((parsed_float * (1 << (10 * suffix_idx)) as f64) as u64)
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -61,7 +60,10 @@ mod tests {
 
     #[test]
     fn test_invalid_float() {
-        assert_eq!(Err("Failed to parse abc as f64".to_owned()), parse("abc KiB"));
+        assert_eq!(
+            Err("Failed to parse abc as f64".to_owned()),
+            parse("abc KiB")
+        );
     }
 
     #[test]
@@ -71,6 +73,9 @@ mod tests {
 
     #[test]
     fn test_invalid_suffix() {
-        assert_eq!(Err("Unable to find suffix bits in suffixes list".to_owned()), parse("1.2 bits"));
+        assert_eq!(
+            Err("Unable to find suffix bits in suffixes list".to_owned()),
+            parse("1.2 bits")
+        );
     }
 }

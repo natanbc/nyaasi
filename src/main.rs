@@ -26,17 +26,16 @@ fn main() {
         .expect("Failed to fetch data from nyaa.si");
 
     let mut data = match parser::parse_html(&raw, &url) {
-        None => {
+        Err(e) => {
+            eprintln!("{}", e);
             if args::output_json() {
                 let serialized = serde_json::to_string(&parser::Results::empty())
                     .expect("Failed to serialize results");
                 println!("{}", serialized);
-            } else {
-                eprintln!("Nothing found");
             }
             return;
         }
-        Some(x) => x,
+        Ok(x) => x,
     };
 
     data.entries.truncate(limit);
