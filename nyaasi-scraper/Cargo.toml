@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["natanbc <natanbc@users.noreply.github.com>"]
 description = "A library for parsing scraped html from https://nyaa.si"
 repository = "https://github.com/natanbc/nyaasi"
+documentation = "https://docs.rs/nyaasi-scraper/"
 license = "Apache-2.0"
 keywords = ["HTML", "scrape", "anime"]
 edition = "2018"
