@@ -2,9 +2,6 @@
 extern crate lazy_static;
 
 mod args;
-pub mod magnet_uri;
-pub mod parser;
-mod size_parser;
 
 fn main() {
     let limit = match args::include_amount() {
@@ -29,11 +26,11 @@ fn main() {
         }
     };
 
-    let mut data = match parser::parse_html(&raw, &url) {
+    let mut data = match nyaasi_scraper::parse_html(&raw, &url) {
         Err(e) => {
             eprintln!("{}", e);
             if args::output_json() {
-                let serialized = serde_json::to_string(&parser::Results::empty())
+                let serialized = serde_json::to_string(&nyaasi_scraper::Results::empty())
                     .expect("Failed to serialize results");
                 println!("{}", serialized);
             }

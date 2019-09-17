@@ -5,12 +5,9 @@ authors = ["natanbc <natanbc@users.noreply.github.com>"]
 edition = "2018"
 
 [dependencies]
-clap =             { version = "2.33.0", features = ["suggestions", "color", "wrap_help"] }
-kuchiki =          "0.7.3"
-lazy_static =      "1.4.0"
-reqwest =          "0.9.20"
-serde =            "1.0.100"
-serde_json =       "1.0.40"
-serde_derive =     "1.0.100"
-serde_urlencoded = "0.5.3"
-url =              "2.1.0"
+clap =           { version = "2.33.0", features = ["suggestions", "color", "wrap_help"] }
+lazy_static =    "1.4.0"
+nyaasi-scraper = { path = "nyaasi-scraper" }
+reqwest =        "0.9.20"
+serde_json =     "1.0.40"
+url =            "2.1.0"

@@ -1,3 +1,4 @@
 /target
+nyaasi-scraper/target
 **/*.rs.bk
 .gdb_history

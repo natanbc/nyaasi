@@ -1,10 +1,15 @@
+#[macro_use]
+extern crate lazy_static;
+
+pub mod magnet_uri;
+pub mod size_parser;
+
 use kuchiki::traits::*;
 use kuchiki::{ElementData, NodeDataRef, NodeRef};
 use serde_derive::Serialize;
 use url::Url;
 
-use super::magnet_uri::MagnetURI;
-use super::size_parser;
+use magnet_uri::MagnetURI;
 
 /// Download links for an entry
 #[derive(Debug, Serialize)]
