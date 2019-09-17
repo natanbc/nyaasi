@@ -3,51 +3,92 @@ use kuchiki::{ElementData, NodeDataRef, NodeRef};
 use serde_derive::Serialize;
 use url::Url;
 
-use super::{magnet_uri, size_parser};
+use super::magnet_uri::MagnetURI;
+use super::size_parser;
 
+/// Download links for an entry
 #[derive(Debug, Serialize)]
 pub struct Links {
+    /// Link to download the torrent file
     pub torrent: String,
+    /// Raw magnet uri
     pub magnet: String,
+    /// Parsed magnet uri
+    #[serde(skip_serializing)]
+    pub parsed_magnet: Option<MagnetURI>
 }
 
+/// Information about the size of an entry
 #[derive(Debug, Serialize)]
 pub struct Sizes {
+    /// Raw, human readable string representing the size
     pub raw: String,
+    /// Size parsed from the magnet uri. Currently (Sep 16, 2019), nyaasi
+    /// doesn't return the size on any magnet uris, but this could change
+    /// in the future
     pub parsed_from_magnet: Option<u64>,
+    /// Size parsed from the raw string
     pub parsed_from_raw: Option<u64>,
 }
 
+/// Represents a download entry
 #[derive(Debug, Serialize)]
 pub struct NyaasiEntry {
+    /// Name of the entry
     pub name: String,
+    /// Download links
     pub links: Links,
+    /// Entry size
     pub sizes: Sizes,
+    /// Date added
     pub date: String,
+    /// Number of seeders
     pub seeders: u32,
+    /// Number of leechers
     pub leechers: u32,
+    /// Number of downloads completed
     pub downloads: u32,
 }
 
+/// Data about a page of the search query
 #[derive(Debug, Serialize)]
 pub struct Page {
+    /// Url of the page. The html on this url can be provided to
+    /// parse_html() to scrape it
     pub url: String,
+    /// Number of the page
     pub number: u32,
 }
 
+/// Pagination data from a page
 #[derive(Debug, Serialize)]
 pub struct Pagination {
+    /// List of pages around the current
     pub pages: Vec<Page>,
+    /// Current page
     pub current: Page,
 }
 
+/// Data contained in a nyaa.si page.
 #[derive(Debug, Serialize)]
 pub struct Results {
+    /// Entries in the page, in chronological order (aka newest last)
     pub entries: Vec<NyaasiEntry>,
+    /// Pagination information extracted from the page.
     pub pagination: Option<Pagination>,
 }
 
 impl Results {
+    /// Returns an empty result set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let r = Results::empty();
+    /// 
+    /// assert_eq!(r.entries(), vec![]);
+    /// assert_eq!(r.pagination, None);
+    /// ```
     pub fn empty() -> Results {
         Results {
             entries: Vec::new(),
@@ -56,6 +97,9 @@ impl Results {
     }
 }
 
+/// Parses HTML source and the page's url into a more usable format.
+///
+/// An error is returned if parsing fails.
 pub fn parse_html(html: &str, url: &str) -> Result<Results, String> {
     let current_url = Url::parse(url).map_err(|e| format!("Unable to parse url {}: {}", url, e))?;
     let dom = kuchiki::parse_html().one(html);
@@ -79,12 +123,13 @@ pub fn parse_html(html: &str, url: &str) -> Result<Results, String> {
         .map(|row| {
             use std::str::FromStr;
 
-            let magnet_uri = select_parent_href(
+            let raw_magnet = select_parent_href(
                 row.as_node(),
                 "td.text-center:nth-child(3) > a > i.fa-magnet",
                 &current_url,
             )?;
-            let magnet = magnet_uri::MagnetURI::from_str(&magnet_uri).ok();
+            let magnet = MagnetURI::from_str(&raw_magnet).ok();
+            let magnet_size = (&magnet).as_ref().and_then(|m| m.length());
             let raw_size = select_text(row.as_node(), "td.text-center:nth-child(4)")?;
 
             Ok(NyaasiEntry {
@@ -95,11 +140,12 @@ pub fn parse_html(html: &str, url: &str) -> Result<Results, String> {
                         "td.text-center:nth-child(3) > a > i.fa-download",
                         &current_url,
                     )?,
-                    magnet: magnet_uri,
+                    magnet: raw_magnet,
+                    parsed_magnet: magnet
                 },
                 sizes: Sizes {
                     raw: raw_size.clone(),
-                    parsed_from_magnet: magnet.and_then(|m| m.length()),
+                    parsed_from_magnet: magnet_size,
                     parsed_from_raw: size_parser::parse(&raw_size).ok(),
                 },
                 date: select_text(row.as_node(), "td.text-center:nth-child(5)")?,
