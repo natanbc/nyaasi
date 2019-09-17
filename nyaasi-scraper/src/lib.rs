@@ -140,6 +140,12 @@ impl Results {
 
 /// Parses HTML source and the page's url into a more usable format.
 ///
+/// This function can parse HTML from the home page (`https://nyaa.si/?query=params`)
+/// or from an user's profile (`https://nyaa.si/user/UserName`)
+///
+/// The same url used for fetching the html string should be passed as the second
+/// parameter for this function.
+///
 /// An error is returned if parsing fails.
 pub fn parse_html(html: &str, url: &str) -> Result<Results, String> {
     let current_url = Url::parse(url).map_err(|e| format!("Unable to parse url {}: {}", url, e))?;
