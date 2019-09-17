@@ -48,6 +48,9 @@ fn main() {
             if args::should_print("name") {
                 println!("{}", row.name);
             }
+            if args::should_print("comments") {
+                println!("\tComments:   {}", row.comments);
+            }
             if args::should_print("torrent") {
                 println!("\tTorrent:    {}", row.links.torrent);
             }

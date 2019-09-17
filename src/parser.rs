@@ -15,7 +15,7 @@ pub struct Links {
     pub magnet: String,
     /// Parsed magnet uri
     #[serde(skip_serializing)]
-    pub parsed_magnet: Option<MagnetURI>
+    pub parsed_magnet: Option<MagnetURI>,
 }
 
 /// Information about the size of an entry
@@ -36,6 +36,8 @@ pub struct Sizes {
 pub struct NyaasiEntry {
     /// Name of the entry
     pub name: String,
+    /// Number of comments on this entry
+    pub comments: u32,
     /// Download links
     pub links: Links,
     /// Entry size
@@ -85,7 +87,7 @@ impl Results {
     ///
     /// ```
     /// let r = Results::empty();
-    /// 
+    ///
     /// assert_eq!(r.entries(), vec![]);
     /// assert_eq!(r.pagination, None);
     /// ```
@@ -134,6 +136,10 @@ pub fn parse_html(html: &str, url: &str) -> Result<Results, String> {
 
             Ok(NyaasiEntry {
                 name: select_text(row.as_node(), "td:nth-child(2) > a:not(.comments)")?,
+                comments: select_text(row.as_node(), "td:nth-child(1) > a.comments > i")
+                    .unwrap_or_else(|_| "0".to_owned())
+                    .parse::<u32>()
+                    .map_err(|e| format!("Unable to parse comment count as u32: {}", e))?,
                 links: Links {
                     torrent: select_parent_href(
                         row.as_node(),
@@ -141,7 +147,7 @@ pub fn parse_html(html: &str, url: &str) -> Result<Results, String> {
                         &current_url,
                     )?,
                     magnet: raw_magnet,
-                    parsed_magnet: magnet
+                    parsed_magnet: magnet,
                 },
                 sizes: Sizes {
                     raw: raw_size.clone(),

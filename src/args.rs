@@ -3,7 +3,11 @@ use url::Url;
 
 lazy_static! {
     static ref ARGS: ArgMatches<'static> = parse_args();
-    static ref FILTERS: Vec<&'static str> = vec!["No filter", "No remakes", "Trusted only",];
+
+    // Values valid as of https://github.com/nyaadevs/nyaa/blob/5da76351640909cf3a992150e88a4a314212f077/nyaa/search.py
+    static ref FILTERS: Vec<&'static str> = vec!["No filter", "No remakes", "Trusted only", "Complete",];
+    static ref SORT_KEYS: Vec<&'static str> = vec!["id", "size", "comments", "seeders", "leechers", "downloads"];
+    static ref ORDERING_TYPES: Vec<&'static str> = vec!["asc", "desc"];
     static ref NYAASI_CATEGORIES: Vec<Category> = vec![
         Category::from("All categories", vec![]),
         Category::from(
@@ -159,6 +163,10 @@ pub fn should_print(what: &str) -> bool {
 }
 
 pub fn get_url() -> Result<String, String> {
+    if let Some(url) = ARGS.value_of("url") {
+        return Ok(url.to_owned());
+    }
+
     let source = match ARGS.value_of("source") {
         None => Source::NYAASI,
         Some("nyaasi") => Source::NYAASI,
@@ -176,17 +184,34 @@ pub fn get_url() -> Result<String, String> {
         ));
     }
 
-    Url::parse_with_params(
-        source.base_url(),
-        &[
-            ("f", filter.to_string()),
-            ("c", format!("{}_{}", category, subcategory)),
-            ("p", try_parse("page", 1u64)?.to_string()),
-            ("q", ARGS.value_of("query").unwrap_or("").to_owned()),
-        ],
-    )
-    .map(|u| u.into_string())
-    .map_err(|e| e.to_string())
+    let mut params = vec![
+        ("f", filter.to_string()),
+        ("c", format!("{}_{}", category, subcategory)),
+        ("p", try_parse("page", 1u64)?.to_string()),
+        ("q", ARGS.value_of("query").unwrap_or("").to_owned()),
+    ];
+
+    if let Some(sort) = ARGS.value_of("sort") {
+        if !SORT_KEYS.contains(&sort) {
+            return Err(format!("Invalid sort key {}", sort));
+        }
+        params.push(("s", sort.to_owned()));
+    }
+
+    if let Some(order) = ARGS.value_of("order") {
+        if !ORDERING_TYPES.contains(&order) {
+            return Err(format!("Invalid order type {}", order));
+        }
+        params.push(("o", order.to_owned()));
+    }
+
+    if let Some(user) = ARGS.value_of("user") {
+        params.push(("u", user.to_owned()));
+    }
+
+    Url::parse_with_params(source.base_url(), params.iter())
+        .map(|u| u.into_string())
+        .map_err(|e| e.to_string())
 }
 
 fn try_parse<T>(name: &str, default: T) -> Result<T, String>
@@ -210,6 +235,11 @@ fn parse_args() -> ArgMatches<'static> {
         .global_setting(AppSettings::ColoredHelp)
         .global_setting(AppSettings::DeriveDisplayOrder)
         .global_setting(AppSettings::UnifiedHelpMessage)
+        .arg(Arg::with_name("url")
+            .long("url")
+            .value_name("URL")
+            .help("Sets the url to be fetched. Overrides all other filtering, sorting, ordering options")
+            .takes_value(true))
         .arg(Arg::with_name("source")
             .short("S")
             .long("source")
@@ -253,6 +283,12 @@ fn parse_args() -> ArgMatches<'static> {
             .value_name("QUERY")
             .help("Sets the search query")
             .takes_value(true))
+        .arg(Arg::with_name("user")
+            .short("u")
+            .long("user")
+            .value_name("USER")
+            .help("Sets the user to search for (user who uploaded the entry)")
+            .takes_value(true))
         .arg(Arg::with_name("page")
              .short("p")
              .long("page")
@@ -260,11 +296,23 @@ fn parse_args() -> ArgMatches<'static> {
              .help("Sets the page to load")
              .takes_value(true)
              .default_value("1"))
+        .arg(Arg::with_name("sort")
+            .long("sort")
+            .value_name("KEY")
+            .help("Sets the key used for sorting results")
+            .takes_value(true)
+            .possible_values(&SORT_KEYS))
+        .arg(Arg::with_name("order")
+            .long("order")
+            .value_name("TYPE")
+            .help("Sets the ordering type used")
+            .takes_value(true)
+            .possible_values(&ORDERING_TYPES))
         .arg(Arg::with_name("include")
             .short("i")
             .long("include")
             .value_name("FIELD")
-            .help("Includes a field when printing to stdout. Ignored if --json is present.\nValid values are name, torrent, magnet, size, magnet_size, parsed_size, date, seeders, leechers, downloads, pages, current_page.\nIgnores parsed_size and magnet_size if size is not present.\nIgnores current_page if pages is not set")
+            .help("Includes a field when printing to stdout. Ignored if --json is present.\nValid values are name, comments, torrent, magnet, size, magnet_size, parsed_size, date, seeders, leechers, downloads, pages, current_page.\nIgnores parsed_size and magnet_size if size is not present.\nIgnores current_page if pages is not set")
             .takes_value(true)
             .multiple(true))
         .arg(Arg::with_name("number")
