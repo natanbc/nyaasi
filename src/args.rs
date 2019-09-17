@@ -320,7 +320,7 @@ fn parse_args() -> ArgMatches<'static> {
             .short("i")
             .long("include")
             .value_name("FIELD")
-            .help("Includes a field when printing to stdout. Ignored if --json is present.\nValid values are name, comments, torrent, magnet, size, magnet_size, parsed_size, date, seeders, leechers, downloads, pages, current_page.\nIgnores parsed_size and magnet_size if size is not present.\nIgnores current_page if pages is not set")
+            .help("Includes a field when printing to stdout. Ignored if --json is present.\nValid values are url, kind, name, comments, torrent, magnet, size, magnet_size, parsed_size, date, seeders, leechers, downloads, pages, current_page.\nIgnores parsed_size and magnet_size if size is not present.\nIgnores current_page if pages is not set")
             .takes_value(true)
             .multiple(true))
         .arg(Arg::with_name("number")

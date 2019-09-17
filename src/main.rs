@@ -49,6 +49,12 @@ fn main() {
             if args::should_print("name") {
                 println!("{}", row.name);
             }
+            if args::should_print("url") {
+                println!("\tURL:        {}", row.url);
+            }
+            if args::should_print("kind") {
+                println!("\tKind:       {:?}", row.kind);
+            }
             if args::should_print("comments") {
                 println!("\tComments:   {}", row.comments);
             }

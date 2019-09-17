@@ -11,6 +11,36 @@ use url::Url;
 
 use magnet_uri::MagnetURI;
 
+/// Type of an entry
+#[derive(Debug, Serialize)]
+pub enum EntryKind {
+    /// This entry was deleted
+    Deleted,
+    /// This entry is hidden
+    Hidden,
+    /// This entry is a remake
+    Remake,
+    /// This entry is trusted
+    Trusted,
+    /// This entry is a normal entry
+    Default,
+    /// This entry's type isn't any of the others
+    Unknown(String),
+}
+
+impl EntryKind {
+    fn from_class_name(name: &str) -> Self {
+        match name {
+            "deleted" => Self::Deleted,
+            "warning" => Self::Hidden,
+            "danger" => Self::Remake,
+            "success" => Self::Trusted,
+            "default" => Self::Default,
+            other => Self::Unknown(other.to_owned()),
+        }
+    }
+}
+
 /// Download links for an entry
 #[derive(Debug, Serialize)]
 pub struct Links {
@@ -39,6 +69,10 @@ pub struct Sizes {
 /// Represents a download entry
 #[derive(Debug, Serialize)]
 pub struct NyaasiEntry {
+    /// URL of this entry (parsing this page isn't supported for now)
+    pub url: String,
+    /// Type of this entry
+    pub kind: EntryKind,
     /// Name of the entry
     pub name: String,
     /// Number of comments on this entry
@@ -112,7 +146,7 @@ pub fn parse_html(html: &str, url: &str) -> Result<Results, String> {
     let dom = kuchiki::parse_html().one(html);
 
     let table = dom
-        .select_first("tr.success > td.text-center > a > i.fa-magnet")
+        .select_first("div.table-responsive > table > tbody > tr > td.text-center > a > i.fa-magnet")
         .map_err(|()| "Unable to find first table row".to_owned())
         .and_then(|e| {
             e.as_node()
@@ -125,7 +159,7 @@ pub fn parse_html(html: &str, url: &str) -> Result<Results, String> {
         })?;
 
     let mut entries = table
-        .select("tr.success")
+        .select("tbody > tr")
         .map_err(|()| "Unable to find table rows from table".to_owned())?
         .map(|row| {
             use std::str::FromStr;
@@ -140,6 +174,8 @@ pub fn parse_html(html: &str, url: &str) -> Result<Results, String> {
             let raw_size = select_text(row.as_node(), "td.text-center:nth-child(4)")?;
 
             Ok(NyaasiEntry {
+                url: href(&select(row.as_node(), "td:nth-child(2) > a:not(.comments)")?, &current_url)?,
+                kind: EntryKind::from_class_name(&attr(row.as_node(), "class")?),
                 name: select_text(row.as_node(), "td:nth-child(2) > a:not(.comments)")?,
                 comments: select_text(row.as_node(), "td:nth-child(1) > a.comments > i")
                     .unwrap_or_else(|_| "0".to_owned())
@@ -209,18 +245,22 @@ fn make_page(e: &NodeDataRef<ElementData>, current_url: &Url) -> Result<Page, St
 }
 
 #[inline]
-fn select_parent(node: &NodeRef, sel: &str) -> Result<NodeRef, String> {
+fn select(node: &NodeRef, sel: &str) -> Result<NodeRef, String> {
     node.select_first(sel)
-        .map_err(|()| format!("Unable to find element with {}", sel))?
-        .as_node()
+        .map_err(|()| format!("Unable to find element with {}", sel))
+        .map(|n| n.as_node().clone())
+}
+
+#[inline]
+fn select_parent(node: &NodeRef, sel: &str) -> Result<NodeRef, String> {
+    select(node, sel)?
         .parent()
         .ok_or_else(|| format!("Unable to find parent of {}", sel))
 }
 
 #[inline]
 fn select_text(node: &NodeRef, sel: &str) -> Result<String, String> {
-    node.select_first(sel)
-        .map_err(|()| format!("Unable to find element with {}", sel))
+    select(node, sel)
         .map(|e| e.text_contents())
 }
 
@@ -237,16 +277,22 @@ fn select_parent_href(a: &NodeRef, sel: &str, current_url: &Url) -> Result<Strin
 }
 
 #[inline]
-fn href(a: &NodeRef, current_url: &Url) -> Result<String, String> {
+fn attr(a: &NodeRef, attr: &str) -> Result<String, String> {
     a.as_element()
         .ok_or_else(|| format!("Unable to convert {:?} to element", a))?
         .attributes
         .borrow()
-        .get("href")
-        .ok_or_else(|| "Unable to find href attribute".to_owned())
+        .get(attr)
+        .map(|s| s.to_owned())
+        .ok_or_else(|| format!("Unable to find attribute {}", attr))
+}
+
+#[inline]
+fn href(a: &NodeRef, current_url: &Url) -> Result<String, String> {
+    attr(a, "href")
         .and_then(|url| {
             current_url
-                .join(url)
+                .join(&url)
                 .map(|u| u.into_string())
                 .map_err(|e| format!("Unable to join href url {} with page url: {}", url, e))
         })

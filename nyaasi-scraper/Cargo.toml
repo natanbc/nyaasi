@@ -1,6 +1,6 @@
 [package]
 name = "nyaasi-scraper"
-version = "0.1.0"
+version = "0.2"
 authors = ["natanbc <natanbc@users.noreply.github.com>"]
 description = "A library for parsing scraped html from https://nyaa.si"
 repository = "https://github.com/natanbc/nyaasi"
