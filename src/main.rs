@@ -21,9 +21,13 @@ fn main() {
             return;
         }
     };
-    let raw = reqwest::get(&url)
-        .and_then(|mut r| r.text())
-        .expect("Failed to fetch data from nyaa.si");
+    let raw = match reqwest::get(&url).and_then(|mut r| r.text()) {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("Failed to fetch data: {}", e);
+            return;
+        }
+    };
 
     let mut data = match parser::parse_html(&raw, &url) {
         Err(e) => {

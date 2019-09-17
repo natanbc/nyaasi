@@ -209,7 +209,9 @@ pub fn get_url() -> Result<String, String> {
         params.push(("u", user.to_owned()));
     }
 
-    Url::parse_with_params(source.base_url(), params.iter())
+    let base_url = ARGS.value_of("base-url").unwrap_or(source.base_url());
+
+    Url::parse_with_params(base_url, params.iter())
         .map(|u| u.into_string())
         .map_err(|e| e.to_string())
 }
@@ -248,6 +250,12 @@ fn parse_args() -> ArgMatches<'static> {
             .takes_value(true)
             .possible_values(&vec!["nyaasi", "sukebei"])
             .default_value("nyaasi"))
+        .arg(Arg::with_name("base-url")
+            .short("b")
+            .long("base-url")
+            .value_name("BASE")
+            .help("Sets the base url to use. Overrides the base url for the selected source")
+            .takes_value(true))
         .arg(Arg::with_name("filter")
             .short("f")
             .long("filter")
