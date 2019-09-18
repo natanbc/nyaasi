@@ -9,6 +9,8 @@ lazy_static! {
 /// # Examples
 ///
 /// ```
+/// use nyaasi_scraper::size_parser;
+///
 /// let raw = "8 KiB";
 /// let parsed = size_parser::parse(raw);
 ///

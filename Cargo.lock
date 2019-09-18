@@ -712,11 +712,11 @@ dependencies = [
 
 [[package]]
 name = "nyaasi"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "nyaasi-scraper 0.1.0",
+ "nyaasi-scraper 0.2.0",
  "reqwest 0.9.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
  "url 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -724,7 +724,7 @@ dependencies = [
 
 [[package]]
 name = "nyaasi-scraper"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "kuchiki 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",

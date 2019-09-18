@@ -125,10 +125,10 @@ impl Results {
     /// # Examples
     ///
     /// ```
-    /// let r = Results::empty();
+    /// let r = nyaasi_scraper::Results::empty();
     ///
-    /// assert_eq!(r.entries(), vec![]);
-    /// assert_eq!(r.pagination, None);
+    /// assert_eq!(r.entries.len(), 0);
+    /// assert!(r.pagination.is_none());
     /// ```
     pub fn empty() -> Results {
         Results {
