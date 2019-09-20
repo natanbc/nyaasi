@@ -5,7 +5,7 @@ pub mod magnet_uri;
 pub mod size_parser;
 
 use kuchiki::traits::*;
-use kuchiki::{ElementData, NodeDataRef, NodeRef};
+use kuchiki::{ElementData, NodeData, NodeDataRef, NodeRef};
 use serde_derive::Serialize;
 use url::Url;
 
@@ -215,7 +215,7 @@ pub fn parse_html(html: &str, url: &str) -> Result<Results, String> {
             |current| {
                 Ok(Pagination {
                     pages: dom
-                        .select("ul.pagination > li:not(.disabled) > a:not([rel])")
+                        .select("ul.pagination > li:not(.disabled):not(.next) > a:not([rel])")
                         .map_err(|()| "Unable to find page list".to_owned())?
                         .map(|e| make_page(&e, &current_url))
                         .collect::<Result<Vec<_>, String>>()?,
@@ -284,22 +284,54 @@ fn select_parent_href(a: &NodeRef, sel: &str, current_url: &Url) -> Result<Strin
 
 #[inline]
 fn attr(a: &NodeRef, attr: &str) -> Result<String, String> {
+    try_attr(a, attr)?
+        .ok_or_else(|| format!("Unable to find attribute {} in {}",
+                attr,
+                path_to(a).join("/")
+        ))
+}
+
+#[inline]
+fn try_attr(a: &NodeRef, attr: &str) -> Result<Option<String>, String> {
     a.as_element()
-        .ok_or_else(|| format!("Unable to convert {:?} to element", a))?
-        .attributes
-        .borrow()
-        .get(attr)
-        .map(|s| s.to_owned())
-        .ok_or_else(|| format!("Unable to find attribute {}", attr))
+        .ok_or_else(|| format!("Unable to convert {} to element", path_to(a).join("/")))
+        .map(|e| e
+            .attributes
+            .borrow()
+            .get(attr)
+            .map(|s| s.to_owned())
+        )
 }
 
 #[inline]
 fn href(a: &NodeRef, current_url: &Url) -> Result<String, String> {
-    attr(a, "href")
-        .and_then(|url| {
-            current_url
-                .join(&url)
-                .map(|u| u.into_string())
-                .map_err(|e| format!("Unable to join href url {} with page url: {}", url, e))
+    try_attr(a, "href")
+        .and_then(|option| {
+            match option {
+                Some(url) => current_url
+                    .join(&url)
+                    .map(|u| u.into_string())
+                    .map_err(|e| format!("Unable to join href url {} with page url: {}", url, e)),
+                None => Ok(current_url.as_str().to_owned())
+            }
         })
+}
+
+fn path_to(node: &NodeRef) -> Vec<String> {
+    let mut vec: Vec<String> = Vec::new();
+    for n in node.inclusive_ancestors() {
+        vec.push(match n.data() {
+            NodeData::Document(_) => "root".to_owned(),
+            NodeData::Element(data) => {
+                let node_type = data.name.local.to_string();
+                match data.attributes.borrow().get("class") {
+                    None => node_type,
+                    Some(classes) => format!("{} ({})", node_type, classes)
+                }
+            },
+            o => format!("{:?}", o)
+        });
+    }
+    vec.reverse();
+    vec
 }

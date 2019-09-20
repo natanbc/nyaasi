@@ -1,6 +1,6 @@
 [package]
 name = "nyaasi"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["natanbc <natanbc@users.noreply.github.com>"]
 edition = "2018"
 
