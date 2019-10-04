@@ -39,7 +39,15 @@ fn main() {
         Ok(x) => x,
     };
 
-    data.entries.truncate(limit);
+    data.entries = data
+        .entries
+        .into_iter()
+        .rev()
+        .take(limit)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect();
 
     if args::output_json() {
         let serialized = serde_json::to_string(&data).expect("Failed to serialize results");
